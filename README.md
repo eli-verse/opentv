@@ -36,7 +36,7 @@ Paste a [fal.ai](https://fal.ai) API key in ⚙ Settings — FLUX, Wan and Kling
 ## How it works
 
 - **Canvas**: [tldraw](https://tldraw.dev)-based infinite canvas. Cards are shapes; wires are arrows.
-- **Cards**: `提示词` (prompt) → `生成` (generate) → `图片/视频` (media). Draw an arrow from a prompt (and optionally an image) into a generate card, pick a model, hit ▶.
+- **Cards are the artwork**: type a prompt on a generation card and hit Enter — the media fills the card itself. `↻` regenerate in place, `🎲` spawn a variation, `🎬` bring an image to life (image-to-video). Derived cards auto-wire provenance arrows; drawing an arrow into a card by hand adds a reference (notes add prompt text, images become the i2v source).
 - **Providers**: one protocol, three backends — `comfy` (local, the point of this project), `fal` (cloud), `mock` (offline demo). Adding a backend is one file: see `src/providers/`.
 - **Projects**: autosaved to the browser; export/import as JSON.
 

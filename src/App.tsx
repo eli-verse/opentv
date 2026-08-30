@@ -15,7 +15,7 @@ export default function App() {
   return (
     <div className="otv-root">
       <Tldraw
-        persistenceKey="opentv"
+        persistenceKey="opentv-v2"
         shapeUtils={shapeUtils}
         onMount={(e) => {
           e.user.updateUserPreferences({ colorScheme: 'dark' })

@@ -258,3 +258,73 @@ body,
   color: #fff;
   font-weight: 600;
 }
+
+/* ---------- v0.2 output-centric generation card ---------- */
+.otv-genbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #17181c;
+  border-top: 1px solid #2b2d34;
+}
+
+.otv-genbar-prompt {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: #b6b9c2;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.otv-genbar-prompt:focus {
+  color: #e8e8ea;
+}
+
+.otv-genbar-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.otv-genbar-actions button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #cfd1d6;
+  font-size: 13px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.otv-genbar-actions button:hover {
+  background: #2b2d34;
+}
+
+.otv-gen-prompt {
+  min-height: 0;
+  flex: 1;
+}
+
+.otv-gen-row {
+  display: flex;
+  gap: 8px;
+}
+
+.otv-gen-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.otv-run-compact {
+  width: 44px;
+  flex: none;
+  padding: 6px 0;
+}
+
+.otv-btn-primary {
+  color: #c9a8f5 !important;
+  font-weight: 700;
+}

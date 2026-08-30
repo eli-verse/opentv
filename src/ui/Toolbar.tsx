@@ -10,13 +10,13 @@ function spawnPoint(editor: Editor) {
 }
 
 export function Toolbar({ editor, onOpenSettings }: { editor: Editor; onOpenSettings: () => void }) {
-  const addPrompt = () => {
-    const { x, y } = spawnPoint(editor)
-    editor.createShape({ id: createShapeId(), type: PROMPT_CARD, x, y })
-  }
   const addGen = () => {
     const { x, y } = spawnPoint(editor)
-    editor.createShape({ id: createShapeId(), type: GEN_CARD, x: x + 200, y })
+    editor.createShape({ id: createShapeId(), type: GEN_CARD, x, y })
+  }
+  const addNote = () => {
+    const { x, y } = spawnPoint(editor)
+    editor.createShape({ id: createShapeId(), type: PROMPT_CARD, x, y })
   }
   const addImage = () => {
     const input = document.createElement('input')
@@ -64,8 +64,8 @@ export function Toolbar({ editor, onOpenSettings }: { editor: Editor; onOpenSett
   return (
     <div className="otv-toolbar">
       <span className="otv-logo">OpenTV</span>
-      <button onClick={addPrompt}>＋ 提示词</button>
-      <button onClick={addGen}>＋ 生成节点</button>
+      <button className="otv-btn-primary" onClick={addGen}>＋ 生成卡</button>
+      <button onClick={addNote}>＋ 便签</button>
       <button onClick={addImage}>＋ 图片</button>
       <span className="otv-toolbar-sep" />
       <button onClick={exportProject}>导出</button>
