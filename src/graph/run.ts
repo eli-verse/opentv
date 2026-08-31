@@ -82,6 +82,24 @@ export function deriveCard(
     y: kind === 'variation' ? parent.y + parent.props.h / 2 + 40 : parent.y,
     props: { prompt: parent.props.prompt, model },
   })
+
+  // A variation should see the same references its parent saw (an i2v
+  // variation needs the parent's source image, not the parent's video).
+  if (kind === 'variation') {
+    for (const binding of editor.getBindingsToShape(fromId, 'arrow')) {
+      if ((binding.props as { terminal?: string }).terminal !== 'end') continue
+      const startBinding = editor
+        .getBindingsFromShape(binding.fromId, 'arrow')
+        .find((b) => (b.props as { terminal?: string }).terminal === 'start')
+      if (!startBinding || startBinding.toId === id) continue
+      const refArrow = createShapeId()
+      editor.createShape({ id: refArrow, type: 'arrow', props: {} })
+      editor.createBindings([
+        { fromId: refArrow, toId: startBinding.toId, type: 'arrow', props: { terminal: 'start', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false } },
+        { fromId: refArrow, toId: id, type: 'arrow', props: { terminal: 'end', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false } },
+      ])
+    }
+  }
   const arrowId = createShapeId()
   editor.createShape({ id: arrowId, type: 'arrow', props: {} })
   editor.createBindings([
