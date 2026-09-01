@@ -4,10 +4,12 @@ import 'tldraw/tldraw.css'
 import { GenCardUtil } from './shapes/GenCardUtil'
 import { MediaCardUtil } from './shapes/MediaCardUtil'
 import { PromptCardUtil } from './shapes/PromptCardUtil'
+import { CanvasToolbar } from './ui/CanvasToolbar'
 import { SettingsDialog } from './ui/SettingsDialog'
 import { Toolbar } from './ui/Toolbar'
 
 const shapeUtils = [PromptCardUtil, MediaCardUtil, GenCardUtil]
+const components = { Toolbar: CanvasToolbar }
 
 export default function App() {
   const [editor, setEditor] = useState<Editor | null>(null)
@@ -17,6 +19,7 @@ export default function App() {
       <Tldraw
         persistenceKey="opentv-v2"
         shapeUtils={shapeUtils}
+        components={components}
         onMount={(e) => {
           e.user.updateUserPreferences({ colorScheme: 'dark' })
           if (import.meta.env.DEV) (window as unknown as { editor: Editor }).editor = e
