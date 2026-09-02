@@ -39,9 +39,9 @@ export async function runGenerationCard(editor: Editor, shapeId: TLShapeId) {
       message: '',
       mediaType: result.mediaType,
       src: result.url,
-      // prompt scrim overlays the media, so the card is exactly 16:9
-      w: 380,
-      h: Math.round((380 * 9) / 16),
+      // square cards per the design spec; media covers the frame
+      w: 288,
+      h: 288,
     })
   } catch (err) {
     patch(editor, shapeId, {
@@ -59,7 +59,7 @@ export async function runGenerationCard(editor: Editor, shapeId: TLShapeId) {
 export function deriveCard(
   editor: Editor,
   fromId: TLShapeId,
-  kind: 'variation' | 'i2v'
+  kind: 'variation' | 'i2v' | 'blank'
 ) {
   const parent = editor.getShape(fromId) as GenCardShape | undefined
   if (!parent) return
@@ -80,7 +80,7 @@ export function deriveCard(
     type: GEN_CARD,
     x: parent.x + parent.props.w + 120,
     y: kind === 'variation' ? parent.y + parent.props.h / 2 + 40 : parent.y,
-    props: { prompt: parent.props.prompt, model },
+    props: { prompt: kind === 'blank' ? '' : parent.props.prompt, model },
   })
 
   // A variation should see the same references its parent saw (an i2v
@@ -116,5 +116,5 @@ export function deriveCard(
       props: { terminal: 'end', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false },
     },
   ])
-  void runGenerationCard(editor, id)
+  if (kind !== 'blank') void runGenerationCard(editor, id)
 }

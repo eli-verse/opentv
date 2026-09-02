@@ -1,6 +1,18 @@
+import { useState } from 'react'
 import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, TLShape } from 'tldraw'
+import { collectInputs } from '../graph/inputs'
 import { deriveCard, runGenerationCard } from '../graph/run'
 import { MODELS } from '../providers/registry'
+import {
+  IconCard,
+  IconChevronDown,
+  IconDownload,
+  IconExpand,
+  IconInfo,
+  IconPlus,
+  IconRedo,
+  IconVideo,
+} from '../ui/icons'
 
 export const GEN_CARD = 'gen-card'
 
@@ -23,6 +35,13 @@ export type GenCardShape = TLShape<typeof GEN_CARD>
 
 const stop = (e: React.SyntheticEvent) => e.stopPropagation()
 
+function download(src: string) {
+  const a = document.createElement('a')
+  a.href = src
+  a.download = `opentv-${Date.now()}`
+  a.click()
+}
+
 export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
   static override type = GEN_CARD
   static override props: RecordProps<GenCardShape> = {
@@ -38,8 +57,8 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
 
   getDefaultProps(): GenCardShape['props'] {
     return {
-      w: 320,
-      h: 210,
+      w: 288,
+      h: 288,
       prompt: '',
       model: MODELS[0].id,
       status: 'idle',
@@ -56,113 +75,142 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
   component(shape: GenCardShape) {
     const { prompt, model, status, message, mediaType, src } = shape.props
     const hasMedia = !!src && status !== 'running'
+    const editor = this.editor
     const patch = (props: Partial<GenCardShape['props']>) =>
-      this.editor.updateShape({ id: shape.id, type: GEN_CARD, props })
+      editor.updateShape({ id: shape.id, type: GEN_CARD, props })
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [pickerOpen, setPickerOpen] = useState(false)
+    const refs = collectInputs(editor, shape.id)
+
+    const hint =
+      status === 'error'
+        ? message
+        : status === 'running'
+          ? message || '生成中…'
+          : hasMedia
+            ? ''
+            : '写好提示词，回车生成'
+
+    const pick = (kind: 'variation' | 'i2v' | 'blank') => {
+      setPickerOpen(false)
+      deriveCard(editor, shape.id, kind)
+    }
 
     return (
       <HTMLContainer className="otv-card" style={{ pointerEvents: 'all' }}>
-        {hasMedia ? (
-          /* completed: the card IS the artwork; actions float above it */
-          <>
-            <div className="otv-hoverbar" onPointerDown={stop} onTouchStart={stop}>
-              <select
-                value={model}
-                onChange={(e) => patch({ model: e.currentTarget.value })}
-                title="模型"
+        {/* floating top bar, centered, 12px above the card */}
+        <div className="otv-hoverbar" onPointerDown={stop} onTouchStart={stop}>
+          {hasMedia ? (
+            <>
+              <button
+                className="otv-iconbtn"
+                title="查看大图"
+                onClick={() => window.dispatchEvent(new CustomEvent('otv:view', { detail: { src, mediaType } }))}
               >
-                {MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-              <button title="用当前提示词重新生成（覆盖本卡）" onClick={() => runGenerationCard(this.editor, shape.id)}>↻</button>
-              <button title="变体：新开一张卡再来一次" onClick={() => deriveCard(this.editor, shape.id, 'variation')}>变体</button>
-              {mediaType === 'image' ? (
-                <button title="图生视频" onClick={() => deriveCard(this.editor, shape.id, 'i2v')}>动起来</button>
-              ) : null}
-            </div>
-            <div className="otv-card-inner">
-              <div className="otv-media-body">
-                {mediaType === 'video' ? (
-                  <video src={src} controls loop muted playsInline onPointerDown={stop} />
-                ) : (
-                  <img src={src} draggable={false} />
-                )}
-                <div className="otv-scrim" onPointerDown={stop} onTouchStart={stop}>
-                  <input
-                    value={prompt}
-                    placeholder="提示词…"
-                    onChange={(e) => patch({ prompt: e.currentTarget.value })}
-                    onKeyDown={(e) => {
-                      e.stopPropagation()
-                      if (e.key === 'Enter') runGenerationCard(this.editor, shape.id)
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            {status === 'error' && message ? (
-              <div className="otv-gen-status otv-error" style={{ padding: '6px 12px' }}>{message}</div>
+                <IconExpand />
+              </button>
+              <button className="otv-iconbtn" title="下载" onClick={() => download(src)}>
+                <IconDownload />
+              </button>
+              <button className="otv-iconbtn" title="重新生成" onClick={() => runGenerationCard(editor, shape.id)}>
+                <IconRedo />
+              </button>
+              <span className="otv-bar-divider" />
+            </>
+          ) : null}
+          <span className="otv-model-select">
+            <select
+              value={model}
+              disabled={status === 'running'}
+              onChange={(e) => patch({ model: e.currentTarget.value })}
+              title="模型"
+            >
+              {MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <IconChevronDown />
+          </span>
+        </div>
+
+        {/* card body */}
+        <div className="otv-card-inner">
+          <div className="otv-media-body">
+            {hasMedia ? (
+              mediaType === 'video' ? (
+                <video src={src} controls loop muted playsInline onPointerDown={stop} />
+              ) : (
+                <img src={src} draggable={false} />
+              )
             ) : null}
-          </>
-        ) : (
-          /* empty / running / error: a quiet frame waiting to be filled */
-          <div className="otv-card-inner">
-            <div className="otv-gen-body">
-              <textarea
-                className="otv-prompt-input otv-gen-prompt"
-                placeholder="描述画面，回车生成…"
+
+            {/* top hint row (16px inset), hidden once media has landed */}
+            {hint ? (
+              <div className={`otv-hint ${status === 'error' ? 'otv-error' : ''}`}>
+                <IconInfo />
+                <span>{hint}</span>
+              </div>
+            ) : null}
+
+            {/* bottom block (16px inset): reference thumb + prompt line */}
+            <div className="otv-bottom" onPointerDown={stop} onTouchStart={stop}>
+              {refs.imageUrl ? <img className="otv-thumb" src={refs.imageUrl} draggable={false} /> : null}
+              <input
                 value={prompt}
                 disabled={status === 'running'}
+                placeholder="这里输入提示词…"
                 onChange={(e) => patch({ prompt: e.currentTarget.value })}
-                onPointerDown={stop}
-                onTouchStart={stop}
                 onKeyDown={(e) => {
                   e.stopPropagation()
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    runGenerationCard(this.editor, shape.id)
-                  }
+                  if (e.key === 'Enter') runGenerationCard(editor, shape.id)
                 }}
               />
-              <div className="otv-gen-row">
-                <select
-                  value={model}
-                  disabled={status === 'running'}
-                  onChange={(e) => patch({ model: e.currentTarget.value })}
-                  onPointerDown={stop}
-                  onTouchStart={stop}
-                >
-                  {MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} · {m.kind}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="otv-run-btn"
-                  disabled={status === 'running'}
-                  onClick={() => runGenerationCard(this.editor, shape.id)}
-                  onPointerDown={stop}
-                  onTouchStart={stop}
-                >
-                  {status === 'running' ? '…' : '▶'}
-                </button>
-              </div>
-              {message ? (
-                <div className={`otv-gen-status ${status === 'error' ? 'otv-error' : ''}`}>{message}</div>
-              ) : null}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* derive entry: plus at the right edge, on hover */}
+        {hasMedia ? (
+          <button
+            className="otv-plus"
+            title="从这张卡继续"
+            onClick={() => setPickerOpen((v) => !v)}
+            onPointerDown={stop}
+            onTouchStart={stop}
+          >
+            <IconPlus />
+          </button>
+        ) : null}
+
+        {/* node picker panel */}
+        {pickerOpen ? (
+          <div className="otv-picker" onPointerDown={stop} onTouchStart={stop}>
+            <div className="otv-picker-title">转为：</div>
+            <button onClick={() => pick('variation')}>
+              <IconRedo />
+              <span>变体 · 再来一张</span>
+            </button>
+            {mediaType === 'image' ? (
+              <button onClick={() => pick('i2v')}>
+                <IconVideo />
+                <span>动起来 · 图生视频</span>
+              </button>
+            ) : null}
+            <button onClick={() => pick('blank')}>
+              <IconCard />
+              <span>新生成卡 · 以此为参考</span>
+            </button>
+          </div>
+        ) : null}
       </HTMLContainer>
     )
   }
 
   getIndicatorPath(shape: GenCardShape) {
     const path = new Path2D()
-    path.roundRect(0, 0, shape.props.w, shape.props.h, 16)
+    path.roundRect(0, 0, shape.props.w, shape.props.h, 12)
     return path
   }
 }
