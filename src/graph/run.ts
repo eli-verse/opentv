@@ -1,11 +1,38 @@
 import { createShapeId, type Editor, type TLShapeId } from 'tldraw'
-import { getModel, MODELS } from '../providers/registry'
-import { getProvider } from '../providers/registry'
+import { getModel, getProvider, MODELS } from '../providers/registry'
 import { GEN_CARD, type GenCardShape } from '../shapes/GenCardUtil'
 import { collectInputs } from './inputs'
 
 function patch(editor: Editor, id: TLShapeId, props: Partial<GenCardShape['props']>) {
   editor.updateShape({ id, type: GEN_CARD, props })
+}
+
+export function toast(message: string) {
+  window.dispatchEvent(new CustomEvent('otv:toast', { detail: message }))
+}
+
+/** Natural media size, for the card-fit rules below. */
+function probeMediaSize(url: string, mediaType: 'image' | 'video'): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    if (mediaType === 'image') {
+      const img = new Image()
+      img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 })
+      img.onerror = () => resolve({ w: 1, h: 1 })
+      img.src = url
+    } else {
+      const v = document.createElement('video')
+      v.onloadedmetadata = () => resolve({ w: v.videoWidth || 16, h: v.videoHeight || 9 })
+      v.onerror = () => resolve({ w: 16, h: 9 })
+      v.src = url
+    }
+  })
+}
+
+/** Spec: portrait fixes width at 288, landscape fixes height at 288, square is 288×288. No cropping. */
+export function cardSizeFor(w: number, h: number): { w: number; h: number } {
+  if (w === h) return { w: 288, h: 288 }
+  if (w < h) return { w: 288, h: Math.round((288 * h) / w) }
+  return { w: Math.round((288 * w) / h), h: 288 }
 }
 
 /** Generate into the card itself: prompt in, media out, same shape. */
@@ -26,6 +53,8 @@ export async function runGenerationCard(editor: Editor, shapeId: TLShapeId) {
     return
   }
 
+  // Spec: the card is selected while generating.
+  editor.select(shapeId)
   patch(editor, shapeId, { status: 'running', message: '准备中…' })
   try {
     const result = await getProvider(model).generate({
@@ -34,27 +63,29 @@ export async function runGenerationCard(editor: Editor, shapeId: TLShapeId) {
       imageUrl: refs.imageUrl,
       onStatus: (message) => patch(editor, shapeId, { status: 'running', message }),
     })
+    const natural = await probeMediaSize(result.url, result.mediaType)
+    const size = cardSizeFor(natural.w, natural.h)
     patch(editor, shapeId, {
       status: 'done',
       message: '',
       mediaType: result.mediaType,
       src: result.url,
-      // square cards per the design spec; media covers the frame
-      w: 288,
-      h: 288,
+      w: size.w,
+      h: size.h,
     })
   } catch (err) {
     patch(editor, shapeId, {
       status: 'error',
       message: err instanceof Error ? err.message : String(err),
     })
+    toast('生成失败，请重新尝试')
   }
 }
 
 /**
  * Output-centric derivation: spawn a new card from a finished one.
- * The provenance arrow doubles as the data edge (variation reuses the
- * prompt; i2v reads the parent's image through the arrow).
+ * The provenance arrow doubles as the data edge; the new card inherits
+ * the parent card's size (spec: 卡片的尺寸继承上个卡片的尺寸).
  */
 export function deriveCard(
   editor: Editor,
@@ -80,7 +111,12 @@ export function deriveCard(
     type: GEN_CARD,
     x: parent.x + parent.props.w + 120,
     y: kind === 'variation' ? parent.y + parent.props.h / 2 + 40 : parent.y,
-    props: { prompt: kind === 'blank' ? '' : parent.props.prompt, model },
+    props: {
+      prompt: kind === 'blank' ? '' : parent.props.prompt,
+      model,
+      w: parent.props.w,
+      h: parent.props.h,
+    },
   })
 
   // A variation should see the same references its parent saw (an i2v
@@ -100,6 +136,7 @@ export function deriveCard(
       ])
     }
   }
+
   const arrowId = createShapeId()
   editor.createShape({ id: arrowId, type: 'arrow', props: { color: 'grey', size: 's', bend: 40, arrowheadStart: 'none', arrowheadEnd: 'none' } })
   editor.createBindings([

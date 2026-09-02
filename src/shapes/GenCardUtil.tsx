@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, TLShape } from 'tldraw'
+import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, TLShape, useValue } from 'tldraw'
 import { collectInputs } from '../graph/inputs'
 import { deriveCard, runGenerationCard } from '../graph/run'
 import { MODELS } from '../providers/registry'
@@ -80,7 +80,23 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
       editor.updateShape({ id: shape.id, type: GEN_CARD, props })
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const [pickerOpen, setPickerOpen] = useState(false)
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const isSelected = useValue(
+      'gen-card-selected',
+      () => editor.getSelectedShapeIds().includes(shape.id),
+      [editor, shape.id]
+    )
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const isHovered = useValue(
+      'gen-card-hovered',
+      () => editor.getHoveredShapeId() === shape.id,
+      [editor, shape.id]
+    )
     const refs = collectInputs(editor, shape.id)
+    // Spec: blurred cards show only the media; hover reveals the chrome
+    // temporarily; selection pins it. Empty/running/error cards keep it.
+    const chromeVisible =
+      isSelected || isHovered || pickerOpen || !hasMedia || status === 'error'
 
     const hint =
       status === 'error'
@@ -99,7 +115,11 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
     return (
       <HTMLContainer className="otv-card" style={{ pointerEvents: 'all' }}>
         {/* floating top bar, centered, 12px above the card */}
-        <div className="otv-hoverbar" onPointerDown={stop} onTouchStart={stop}>
+        <div
+          className={`otv-hoverbar ${chromeVisible ? '' : 'otv-chrome-hidden'} ${status === 'running' ? 'otv-bar-disabled' : ''}`}
+          onPointerDown={stop}
+          onTouchStart={stop}
+        >
           {hasMedia ? (
             <>
               <button
@@ -154,17 +174,38 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
               </div>
             ) : null}
 
-            {/* bottom block (16px inset): reference thumb + prompt line */}
-            <div className="otv-bottom" onPointerDown={stop} onTouchStart={stop}>
+            {/* generating: flowing white veil, 0-8% opacity loop (spec: 类似 flora) */}
+            {status === 'running' ? <div className="otv-breathe" /> : null}
+
+            {/* bottom block (16px inset): reference thumb + auto-growing prompt */}
+            <div
+              className={`otv-bottom ${chromeVisible ? '' : 'otv-chrome-hidden'}`}
+              onPointerDown={stop}
+              onTouchStart={stop}
+            >
               {refs.imageUrl ? <img className="otv-thumb" src={refs.imageUrl} draggable={false} /> : null}
-              <input
+              <textarea
+                rows={1}
                 value={prompt}
                 disabled={status === 'running'}
                 placeholder="这里输入提示词…"
-                onChange={(e) => patch({ prompt: e.currentTarget.value })}
+                ref={(el) => {
+                  if (!el) return
+                  el.style.height = 'auto'
+                  el.style.height = Math.min(el.scrollHeight, 132) + 'px'
+                }}
+                onChange={(e) => {
+                  const el = e.currentTarget
+                  el.style.height = 'auto'
+                  el.style.height = Math.min(el.scrollHeight, 132) + 'px'
+                  patch({ prompt: el.value })
+                }}
                 onKeyDown={(e) => {
                   e.stopPropagation()
-                  if (e.key === 'Enter') runGenerationCard(editor, shape.id)
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    runGenerationCard(editor, shape.id)
+                  }
                 }}
               />
             </div>
@@ -172,7 +213,7 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
         </div>
 
         {/* derive entry: plus at the right edge, on hover */}
-        {hasMedia ? (
+        {hasMedia && (chromeVisible || pickerOpen) ? (
           <button
             className="otv-plus"
             title="从这张卡继续"
