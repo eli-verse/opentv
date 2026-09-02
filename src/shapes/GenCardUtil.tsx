@@ -1,5 +1,4 @@
 import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, TLShape } from 'tldraw'
-import { collectInputs } from '../graph/inputs'
 import { deriveCard, runGenerationCard } from '../graph/run'
 import { MODELS } from '../providers/registry'
 
@@ -59,48 +58,57 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
     const hasMedia = !!src && status !== 'running'
     const patch = (props: Partial<GenCardShape['props']>) =>
       this.editor.updateShape({ id: shape.id, type: GEN_CARD, props })
-    const refs = collectInputs(this.editor, shape.id)
 
     return (
       <HTMLContainer className="otv-card" style={{ pointerEvents: 'all' }}>
         {hasMedia ? (
-          /* ---- completed: the card IS the artwork ---- */
+          /* completed: the card IS the artwork; actions float above it */
           <>
-            <div className="otv-media-body">
-              {mediaType === 'video' ? (
-                <video src={src} controls loop muted playsInline onPointerDown={stop} />
-              ) : (
-                <img src={src} draggable={false} />
-              )}
+            <div className="otv-hoverbar" onPointerDown={stop} onTouchStart={stop}>
+              <select
+                value={model}
+                onChange={(e) => patch({ model: e.currentTarget.value })}
+                title="模型"
+              >
+                {MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              <button title="用当前提示词重新生成（覆盖本卡）" onClick={() => runGenerationCard(this.editor, shape.id)}>↻</button>
+              <button title="变体：新开一张卡再来一次" onClick={() => deriveCard(this.editor, shape.id, 'variation')}>变体</button>
+              {mediaType === 'image' ? (
+                <button title="图生视频" onClick={() => deriveCard(this.editor, shape.id, 'i2v')}>动起来</button>
+              ) : null}
             </div>
-            <div className="otv-genbar" onPointerDown={stop} onTouchStart={stop}>
-              <input
-                className="otv-genbar-prompt"
-                value={prompt}
-                placeholder="提示词…"
-                onChange={(e) => patch({ prompt: e.currentTarget.value })}
-                onKeyDown={(e) => {
-                  e.stopPropagation()
-                  if (e.key === 'Enter') runGenerationCard(this.editor, shape.id)
-                }}
-              />
-              <div className="otv-genbar-actions">
-                <button title="用当前提示词重新生成（覆盖本卡）" onClick={() => runGenerationCard(this.editor, shape.id)}>↻</button>
-                <button title="变体：新开一张卡再来一次" onClick={() => deriveCard(this.editor, shape.id, 'variation')}>🎲</button>
-                {mediaType === 'image' ? (
-                  <button title="动起来：图生视频" onClick={() => deriveCard(this.editor, shape.id, 'i2v')}>🎬</button>
-                ) : null}
+            <div className="otv-card-inner">
+              <div className="otv-media-body">
+                {mediaType === 'video' ? (
+                  <video src={src} controls loop muted playsInline onPointerDown={stop} />
+                ) : (
+                  <img src={src} draggable={false} />
+                )}
+                <div className="otv-scrim" onPointerDown={stop} onTouchStart={stop}>
+                  <input
+                    value={prompt}
+                    placeholder="提示词…"
+                    onChange={(e) => patch({ prompt: e.currentTarget.value })}
+                    onKeyDown={(e) => {
+                      e.stopPropagation()
+                      if (e.key === 'Enter') runGenerationCard(this.editor, shape.id)
+                    }}
+                  />
+                </div>
               </div>
             </div>
-            {status === 'error' && message ? <div className="otv-gen-status otv-error">{message}</div> : null}
+            {status === 'error' && message ? (
+              <div className="otv-gen-status otv-error" style={{ padding: '6px 12px' }}>{message}</div>
+            ) : null}
           </>
         ) : (
-          /* ---- empty / running / error: a frame waiting to be filled ---- */
-          <>
-            <div className="otv-card-header otv-header-gen">
-              ⚡ 生成
-              {refs.imageUrl ? <span className="otv-header-label">已连参考图</span> : null}
-            </div>
+          /* empty / running / error: a quiet frame waiting to be filled */
+          <div className="otv-card-inner">
             <div className="otv-gen-body">
               <textarea
                 className="otv-prompt-input otv-gen-prompt"
@@ -133,7 +141,7 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
                   ))}
                 </select>
                 <button
-                  className="otv-run-btn otv-run-compact"
+                  className="otv-run-btn"
                   disabled={status === 'running'}
                   onClick={() => runGenerationCard(this.editor, shape.id)}
                   onPointerDown={stop}
@@ -146,7 +154,7 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
                 <div className={`otv-gen-status ${status === 'error' ? 'otv-error' : ''}`}>{message}</div>
               ) : null}
             </div>
-          </>
+          </div>
         )}
       </HTMLContainer>
     )
@@ -154,7 +162,7 @@ export class GenCardUtil extends BaseBoxShapeUtil<GenCardShape> {
 
   getIndicatorPath(shape: GenCardShape) {
     const path = new Path2D()
-    path.roundRect(0, 0, shape.props.w, shape.props.h, 12)
+    path.roundRect(0, 0, shape.props.w, shape.props.h, 16)
     return path
   }
 }

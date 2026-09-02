@@ -16,6 +16,7 @@ declare module 'tldraw' {
 
 export type MediaCardShape = TLShape<typeof MEDIA_CARD>
 
+/** Imported assets (uploads). Chrome-less: the media fills the rounded card. */
 export class MediaCardUtil extends BaseBoxShapeUtil<MediaCardShape> {
   static override type = MEDIA_CARD
   static override props: RecordProps<MediaCardShape> = {
@@ -35,30 +36,21 @@ export class MediaCardUtil extends BaseBoxShapeUtil<MediaCardShape> {
   }
 
   component(shape: MediaCardShape) {
-    const { mediaType, src, label } = shape.props
+    const { mediaType, src } = shape.props
     return (
       <HTMLContainer className="otv-card" style={{ pointerEvents: 'all' }}>
-        <div className={`otv-card-header ${mediaType === 'video' ? 'otv-header-video' : 'otv-header-image'}`}>
-          {mediaType === 'video' ? '🎬 视频' : '🖼 图片'}
-          {label ? <span className="otv-header-label">{label}</span> : null}
-        </div>
-        <div className="otv-media-body">
-          {src ? (
-            mediaType === 'video' ? (
-              <video
-                src={src}
-                controls
-                loop
-                muted
-                playsInline
-                onPointerDown={(e) => e.stopPropagation()}
-              />
+        <div className="otv-card-inner">
+          <div className="otv-media-body">
+            {src ? (
+              mediaType === 'video' ? (
+                <video src={src} controls loop muted playsInline onPointerDown={(e) => e.stopPropagation()} />
+              ) : (
+                <img src={src} draggable={false} />
+              )
             ) : (
-              <img src={src} draggable={false} />
-            )
-          ) : (
-            <div className="otv-media-empty">空媒体</div>
-          )}
+              <div className="otv-media-empty">空媒体</div>
+            )}
+          </div>
         </div>
       </HTMLContainer>
     )
@@ -66,7 +58,7 @@ export class MediaCardUtil extends BaseBoxShapeUtil<MediaCardShape> {
 
   getIndicatorPath(shape: MediaCardShape) {
     const path = new Path2D()
-    path.roundRect(0, 0, shape.props.w, shape.props.h, 12)
+    path.roundRect(0, 0, shape.props.w, shape.props.h, 16)
     return path
   }
 }

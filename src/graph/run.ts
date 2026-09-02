@@ -39,9 +39,9 @@ export async function runGenerationCard(editor: Editor, shapeId: TLShapeId) {
       message: '',
       mediaType: result.mediaType,
       src: result.url,
-      // 16:9 media area + prompt bar, no letterboxing
+      // prompt scrim overlays the media, so the card is exactly 16:9
       w: 380,
-      h: Math.round((380 * 9) / 16) + 42,
+      h: Math.round((380 * 9) / 16),
     })
   } catch (err) {
     patch(editor, shapeId, {
@@ -93,7 +93,7 @@ export function deriveCard(
         .find((b) => (b.props as { terminal?: string }).terminal === 'start')
       if (!startBinding || startBinding.toId === id) continue
       const refArrow = createShapeId()
-      editor.createShape({ id: refArrow, type: 'arrow', props: {} })
+      editor.createShape({ id: refArrow, type: 'arrow', props: { color: 'grey', size: 's', bend: 40, arrowheadStart: 'none', arrowheadEnd: 'none' } })
       editor.createBindings([
         { fromId: refArrow, toId: startBinding.toId, type: 'arrow', props: { terminal: 'start', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false } },
         { fromId: refArrow, toId: id, type: 'arrow', props: { terminal: 'end', normalizedAnchor: { x: 0.5, y: 0.5 }, isPrecise: false, isExact: false } },
@@ -101,7 +101,7 @@ export function deriveCard(
     }
   }
   const arrowId = createShapeId()
-  editor.createShape({ id: arrowId, type: 'arrow', props: {} })
+  editor.createShape({ id: arrowId, type: 'arrow', props: { color: 'grey', size: 's', bend: 40, arrowheadStart: 'none', arrowheadEnd: 'none' } })
   editor.createBindings([
     {
       fromId: arrowId,

@@ -9,7 +9,7 @@ import { SettingsDialog } from './ui/SettingsDialog'
 import { Toolbar } from './ui/Toolbar'
 
 const shapeUtils = [PromptCardUtil, MediaCardUtil, GenCardUtil]
-const components = { Toolbar: CanvasToolbar }
+const components = { Toolbar: CanvasToolbar, StylePanel: null }
 
 export default function App() {
   const [editor, setEditor] = useState<Editor | null>(null)
