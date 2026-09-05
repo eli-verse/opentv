@@ -1,9 +1,22 @@
+/* OpenTV UI — tokens from docs/design-spec.md (monochrome system) */
+:root {
+  --otv-canvas-bg: #000000;
+  --otv-grid-dot: rgba(255, 255, 255, 0.07);
+  --otv-card-bg: rgba(40, 40, 40, 0.8);
+  --otv-border: rgba(255, 255, 255, 0.08);
+  --otv-border-focus: rgba(255, 255, 255, 0.6);
+  --otv-text: #ffffff;
+  --otv-text-dim: rgba(255, 255, 255, 0.4);
+  --otv-btn-black: #151515;
+  --otv-btn-white: #ffffff;
+}
+
 html,
 body,
 #root {
   margin: 0;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
 }
 
 .otv-root {
@@ -11,63 +24,59 @@ body,
   inset: 0;
 }
 
+/* pure black canvas with dot grid */
+.otv-root .tl-background {
+  background-color: var(--otv-canvas-bg);
+  background-image: radial-gradient(var(--otv-grid-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 /* ---------- cards ---------- */
 .otv-card {
   display: flex;
   flex-direction: column;
-  background: #1c1d21;
-  border: 1px solid #33353c;
+  background: var(--otv-card-bg);
+  border: 1px solid var(--otv-border);
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  color: #e8e8ea;
+  color: var(--otv-text);
+  overflow: visible; /* the floating action bar sits above the card */
 }
 
-.otv-card-header {
+.otv-card-inner {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #fff;
-  user-select: none;
-}
-
-.otv-header-prompt { background: linear-gradient(90deg, #2c5f8a, #24485f); }
-.otv-header-gen    { background: linear-gradient(90deg, #7a4dbf, #5b3a8f); }
-.otv-header-image  { background: linear-gradient(90deg, #2e8a5f, #1f5f42); }
-.otv-header-video  { background: linear-gradient(90deg, #b3552e, #8a3e1f); }
-
-.otv-header-label {
-  font-weight: 400;
-  opacity: 0.75;
-  font-size: 11px;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border-radius: 11px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
+/* note card (便签) */
 .otv-prompt-input {
   flex: 1;
   resize: none;
   border: 0;
   outline: none;
   background: transparent;
-  color: #e8e8ea;
-  padding: 10px 12px;
+  color: var(--otv-text);
+  padding: 14px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   font-family: inherit;
 }
 
+.otv-prompt-input::placeholder {
+  color: var(--otv-text-dim);
+}
+
+/* media area — the card IS the artwork */
 .otv-media-body {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #101114;
+  background: #0a0a0a;
   min-height: 0;
 }
 
@@ -75,57 +84,314 @@ body,
 .otv-media-body video {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* card matches media aspect, so this never crops */
   display: block;
 }
 
 .otv-media-empty {
-  color: #55575f;
-  font-size: 13px;
+  color: var(--otv-text-dim);
+  font-size: 12px;
 }
 
+/* top hint row inside the media area (16px inset) */
+.otv-hint {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--otv-text-dim);
+  pointer-events: none;
+}
+
+.otv-hint.otv-error {
+  color: #ff6b6b;
+}
+
+/* bottom block inside the media area (16px inset): thumb + prompt line */
+.otv-bottom {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.otv-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--otv-border);
+  background: #000;
+}
+
+.otv-bottom input {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  line-height: 22px;
+  font-family: inherit;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.otv-bottom input::placeholder {
+  color: var(--otv-text-dim);
+}
+
+/* floating action pill: centered, 12px above the card, 40px tall */
+.otv-hoverbar {
+  position: absolute;
+  top: -52px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 10px;
+  padding: 4px;
+  white-space: nowrap;
+}
+
+.otv-iconbtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--otv-text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.otv-iconbtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.otv-bar-divider {
+  width: 2px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--otv-border);
+  margin: 0 2px;
+}
+
+.otv-model-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--otv-text);
+  padding: 0 10px 0 4px;
+}
+
+.otv-model-select:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.otv-model-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--otv-text);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 0 6px 0 8px;
+  max-width: 150px;
+  cursor: pointer;
+  outline: none;
+}
+
+.otv-model-select svg {
+  color: var(--otv-text-dim);
+  pointer-events: none;
+}
+
+/* derive entry: 32px plus, 12px right of the card, shown on hover */
+.otv-plus {
+  position: absolute;
+  right: -44px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  color: var(--otv-text);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.otv-card:hover .otv-plus,
+.otv-plus:hover {
+  opacity: 1;
+}
+
+/* node picker panel ("转为：") */
+.otv-picker {
+  position: absolute;
+  left: calc(100% + 52px);
+  top: 0;
+  width: 224px;
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 12px;
+  padding: 12px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+
+.otv-picker-title {
+  font-size: 12px;
+  color: var(--otv-text-dim);
+  padding: 0 8px 8px;
+}
+
+.otv-picker button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--otv-text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 9px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.otv-picker button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* empty-canvas guide pill */
+.otv-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  color: var(--otv-text);
+  font-size: 14px;
+  padding: 10px 20px;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.otv-guide b {
+  font-weight: 500;
+}
+
+.otv-guide span {
+  color: var(--otv-text-dim);
+}
+
+/* lightbox */
+.otv-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  cursor: zoom-out;
+}
+
+.otv-lightbox img,
+.otv-lightbox video {
+  max-width: calc(100vw - 240px);
+  max-height: calc(100vh - 240px);
+  object-fit: contain;
+}
+
+/* empty generation card */
 .otv-gen-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 12px;
   flex: 1;
+  min-height: 0;
 }
 
-.otv-gen-body select {
-  background: #26272c;
-  color: #e8e8ea;
-  border: 1px solid #3a3c44;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: 13px;
-  width: 100%;
+.otv-gen-prompt {
+  min-height: 0;
+  flex: 1;
+  padding: 4px 2px;
 }
 
-.otv-gen-inputs {
+.otv-gen-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.otv-gen-row select {
+  flex: 1;
+  min-width: 0;
+  background: var(--otv-btn-black);
+  color: var(--otv-text);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  padding: 7px 12px;
   font-size: 12px;
-  color: #8b8e98;
+  font-family: inherit;
 }
 
 .otv-run-btn {
-  background: linear-gradient(90deg, #7a4dbf, #9a5fe0);
-  color: #fff;
+  background: var(--otv-btn-white);
+  color: #000;
   border: 0;
-  border-radius: 8px;
-  padding: 8px 0;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 999px;
+  width: 40px;
+  height: 30px;
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .otv-run-btn:disabled {
-  opacity: 0.55;
+  background: var(--otv-text-dim);
   cursor: default;
 }
 
 .otv-gen-status {
   font-size: 12px;
-  color: #9aa0ab;
+  color: var(--otv-text-dim);
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -133,10 +399,10 @@ body,
 }
 
 .otv-error {
-  color: #ff7b72;
+  color: #ff6b6b;
 }
 
-/* ---------- toolbar ---------- */
+/* ---------- top toolbar ---------- */
 .otv-toolbar {
   position: absolute;
   top: 12px;
@@ -144,53 +410,55 @@ body,
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(28, 29, 33, 0.92);
-  border: 1px solid #33353c;
-  border-radius: 12px;
-  padding: 6px 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  gap: 2px;
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  padding: 5px 12px;
   z-index: 300;
 }
 
 .otv-logo {
-  font-weight: 800;
+  font-weight: 500;
   font-size: 14px;
-  background: linear-gradient(90deg, #9a5fe0, #4da3bf);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-right: 6px;
+  color: var(--otv-text);
+  margin-right: 8px;
   user-select: none;
 }
 
 .otv-toolbar button {
   background: transparent;
   border: 0;
-  color: #cfd1d6;
+  color: var(--otv-text-dim);
   font-size: 13px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .otv-toolbar button:hover {
-  background: #33353c;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--otv-text);
+}
+
+.otv-btn-primary {
+  color: var(--otv-text) !important;
+  font-weight: 500;
 }
 
 .otv-toolbar-sep {
   width: 1px;
-  height: 18px;
-  background: #33353c;
-  margin: 0 2px;
+  height: 16px;
+  background: var(--otv-border);
+  margin: 0 4px;
 }
 
 /* ---------- settings modal ---------- */
 .otv-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,11 +470,11 @@ body,
   max-width: calc(100vw - 48px);
   max-height: calc(100vh - 96px);
   overflow: auto;
-  background: #1c1d21;
-  border: 1px solid #33353c;
-  border-radius: 14px;
+  background: #1a1a1a;
+  border: 1px solid var(--otv-border);
+  border-radius: 16px;
   padding: 20px;
-  color: #e8e8ea;
+  color: var(--otv-text);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -215,25 +483,32 @@ body,
 .otv-modal h2 {
   margin: 0;
   font-size: 16px;
+  font-weight: 500;
 }
 
 .otv-modal label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
-  color: #b6b9c2;
+  font-size: 12px;
+  color: var(--otv-text-dim);
 }
 
 .otv-modal input,
 .otv-modal textarea {
-  background: #26272c;
-  color: #e8e8ea;
-  border: 1px solid #3a3c44;
+  background: var(--otv-btn-black);
+  color: var(--otv-text);
+  border: 1px solid var(--otv-border);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
   font-family: inherit;
+}
+
+.otv-modal input:focus,
+.otv-modal textarea:focus {
+  outline: none;
+  border-color: var(--otv-border-focus);
 }
 
 .otv-modal-actions {
@@ -243,18 +518,147 @@ body,
 }
 
 .otv-modal-actions button {
-  background: #26272c;
-  color: #cfd1d6;
-  border: 1px solid #3a3c44;
-  border-radius: 8px;
-  padding: 8px 16px;
+  background: var(--otv-btn-black);
+  color: var(--otv-text);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  padding: 8px 18px;
   font-size: 13px;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .otv-modal-actions .otv-primary {
-  background: linear-gradient(90deg, #7a4dbf, #9a5fe0);
+  background: var(--otv-btn-white);
   border: 0;
-  color: #fff;
-  font-weight: 600;
+  color: #000;
+  font-weight: 500;
+}
+
+/* ---------- 1:1 audit additions ---------- */
+
+/* chrome that fades out when a finished card is neither hovered nor selected */
+.otv-chrome-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s;
+}
+
+.otv-hoverbar,
+.otv-bottom,
+.otv-plus {
+  transition: opacity 0.15s;
+}
+
+/* generating: bar greyed out and inert */
+.otv-bar-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* flowing white veil while generating (0% → 8% loop) */
+.otv-breathe {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  animation: otv-breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes otv-breathe {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.08; }
+}
+
+/* auto-growing prompt textarea (max 132px, then scrolls) */
+.otv-bottom textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  outline: none;
+  resize: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  line-height: 22px;
+  font-family: inherit;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.otv-bottom textarea::placeholder {
+  color: var(--otv-text-dim);
+}
+
+/* upload node empty state */
+.otv-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--otv-text-dim);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 24px;
+}
+
+.otv-upload-zone:hover {
+  color: var(--otv-text);
+}
+
+/* project pill, top-left */
+.otv-project {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 12px;
+  color: var(--otv-text);
+  font-size: 13px;
+  padding: 8px 14px 8px 8px;
+  z-index: 300;
+  user-select: none;
+}
+
+.otv-project-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--otv-btn-white);
+}
+
+/* double-click node picker */
+.otv-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+}
+
+.otv-picker-canvas {
+  position: fixed;
+  z-index: 360;
+}
+
+/* toast */
+.otv-toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--otv-btn-black);
+  border: 1px solid var(--otv-border);
+  border-radius: 999px;
+  color: var(--otv-text);
+  font-size: 13px;
+  padding: 10px 20px;
+  z-index: 450;
 }

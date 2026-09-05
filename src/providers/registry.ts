@@ -15,6 +15,7 @@ export const MODELS: ModelSpec[] = [
   // Zero-dependency mock so the canvas is playable out of the box.
   { id: 'mock/image', name: 'Mock 图像（离线）', kind: 't2i', provider: 'mock' },
   { id: 'mock/video', name: 'Mock 视频（离线）', kind: 't2v', provider: 'mock' },
+  { id: 'mock/i2v', name: 'Mock 图生视频（离线）', kind: 'i2v', provider: 'mock' },
 ]
 
 const PROVIDERS: Record<string, Provider> = {
